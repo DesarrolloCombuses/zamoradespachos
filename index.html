@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zamora planillas</title>
+  <style>
+    :root{
+      --bg:#0b1022; --ink:#ffffff; --muted:#9aa3b2;
+      --panel:#11162b; --btn:#2563eb; --btn-ink:#fff;
+      --ring:#1e293b;
+      --header-h:56px;
+    }
+    *{ box-sizing:border-box }
+    html, body { height:100%; margin:0; background:var(--bg); color:var(--ink); font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif }
+    header{
+      position:fixed; inset:0 0 auto 0; height:var(--header-h);
+      display:flex; align-items:center; gap:12px;
+      background:var(--panel); border-bottom:1px solid var(--ring); padding:0 14px; z-index:10;
+    }
+    header .title{ font-weight:600 }
+    header .spacer{ flex:1 }
+    header .btn{
+      appearance:none; border:1px solid transparent; background:var(--btn);
+      color:var(--btn-ink); padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:600;
+    }
+    header .btn.secondary{ background:transparent; border-color:var(--ring); color:var(--ink) }
+    main{
+      position:fixed; top:var(--header-h); left:0; right:0; bottom:0; padding:10px;
+    }
+    .frame-wrap{
+      width:100%; height:100%; background:#0f152a; border:1px solid var(--ring);
+      border-radius:14px; overflow:hidden;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    iframe{ width:100%; height:100%; border:0; display:block; }
+    .hint{ position:fixed; bottom:10px; left:50%; transform:translateX(-50%); color:var(--muted); font-size:.85rem }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title">Planillas Zamora</div>
+    <div class="spacer"></div>
+    <button class="btn secondary" id="btnReload">Recargar</button>
+    <a class="btn" id="btnOpen" target="_blank" rel="noopener"></a>
+  </header>
+
+  <main>
+    <div class="frame-wrap">
+      <iframe id="zamoraFrame"
+        src=""
+        loading="lazy"
+        allowfullscreen
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+    </div>
+  </main>
+
+  <div class="hint" id="hint"></div>
+
+  <script>
+    // === CONFIGURA AQUÍ TU URL DE WEBAPP (ya incluye ?embed=1) ===
+    const APP_URL = "https://script.google.com/macros/s/AKfycbwNnvobU_33rThWi1oEn5Bioc55Sm2bgo7_LlhZdXdPzeWWOjsJUgNUH19YSujLfsSw/exec?embed=1";
+
+    const frame = document.getElementById('zamoraFrame');
+    const hint  = document.getElementById('hint');
+    document.getElementById('btnOpen').href = APP_URL;
+
+    // Si quieres pasar parámetros dinámicos desde la página padre:
+    // const params = new URLSearchParams({ ruta: 'ZAMORA', vehiculo: '165' });
+    // frame.src = APP_URL + '&' + params.toString();
+
+    frame.src = APP_URL;
+
+    // Controles
+    document.getElementById('btnReload').onclick = () => {
+      const u = new URL(frame.src);
+      u.searchParams.set('_ts', Date.now()); // evitar caché
+      frame.src = u.toString();
+    };
+
+    // Auto-ajuste de altura si la app hija envía postMessage
+    window.addEventListener('message', (ev) => {
+      if (!ev || !ev.data) return;
+      if (ev.data.type === 'apps-script-height') {
+        const h = Number(ev.data.value);
+        if (h > 0) {
+          // Si quieres que el iframe crezca según contenido, descomenta:
+          // frame.style.height = h + 'px';
+          hint.textContent = '';
+        }
+      }
+      if (ev.data.type === 'apps-script-ready') {
+        hint.textContent = '';
+      }
+    });
+
+    // Fallback de estado: si a los 5s no hubo señal, avisamos
+    setTimeout(() => {
+      if (!frame.contentWindow) return; // no podemos saber más por CORS
+      if (!hint.textContent) {
+        hint.textContent = 'Si no ves la app, verifica que el despliegue esté publicado y permita acceso.';
+      }
+    }, 5000);
+  </script>
+</body>
+</html>
